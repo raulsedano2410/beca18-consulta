@@ -16,13 +16,14 @@ import {
 interface ResultadoData {
   tipo: string;
   datos: Record<string, unknown>;
-  ranking_global?: number;
+  ranking_general?: number;
+  total_general?: number;
+  ranking_modalidad?: number;
   total_modalidad?: number;
   ranking_regional?: number;
   total_region?: number;
   percentil?: number;
   mismo_puntaje_global?: number;
-  mismo_puntaje_regional?: number;
   distribucion?: { puntaje: number; cantidad: number }[];
   corte?: {
     modalidad: string;
@@ -136,14 +137,25 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
       </div>
 
       {/* Rankings */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ranking Nacional</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ranking General</p>
           <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-            #{data.ranking_global?.toLocaleString()}
+            #{data.ranking_general?.toLocaleString()}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            de {data.total_modalidad?.toLocaleString()} preseleccionados
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            de {data.total_general?.toLocaleString()} preseleccionados
+          </p>
+        </div>
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            Ranking en {d.modalidad as string}
+          </p>
+          <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
+            #{data.ranking_modalidad?.toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            de {data.total_modalidad?.toLocaleString()} en tu modalidad
           </p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
@@ -153,14 +165,14 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
           <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
             #{data.ranking_regional?.toLocaleString()}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             de {data.total_region?.toLocaleString()} en tu region
           </p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Percentil</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Percentil en modalidad</p>
           <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">Top {data.percentil}%</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {data.mismo_puntaje_global} con tu mismo puntaje
           </p>
         </div>
@@ -175,8 +187,8 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
             {d.modalidad as string}, solo{" "}
             <strong>{data.corte.becas_disponibles.toLocaleString()}</strong>{" "}
             obtendran beca. Estas en el puesto{" "}
-            <strong>#{data.ranking_global?.toLocaleString()}</strong>.
-            {data.ranking_global! <= data.corte.becas_disponibles ? (
+            <strong>#{data.ranking_modalidad?.toLocaleString()}</strong> de tu modalidad.
+            {data.ranking_modalidad! <= data.corte.becas_disponibles ? (
               <span className="text-green-700 dark:text-green-400 font-bold">
                 {" "}Tienes buenas posibilidades.
               </span>

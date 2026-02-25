@@ -44,7 +44,17 @@ export async function GET(
     const mod = persona.modalidad;
     const region = persona.region;
 
-    // Ranking global (count with higher score)
+    // Ranking general (ALL preseleccionados, all modalities)
+    const { count: higherGeneral } = await supabase
+      .from('preseleccionados')
+      .select('*', { count: 'exact', head: true })
+      .gt('puntaje_final', persona.puntaje_final);
+
+    const { count: totalGeneral } = await supabase
+      .from('preseleccionados')
+      .select('*', { count: 'exact', head: true });
+
+    // Ranking within modality
     const { count: higherGlobal } = await supabase
       .from('preseleccionados')
       .select('*', { count: 'exact', head: true })
@@ -98,10 +108,15 @@ export async function GET(
     const ranking_global = (higherGlobal || 0) + 1;
     const total_modalidad = totalGlobal || 0;
 
+    const ranking_general = (higherGeneral || 0) + 1;
+    const total_general = totalGeneral || 0;
+
     return NextResponse.json({
       tipo: 'preseleccionado',
       datos: persona,
-      ranking_global,
+      ranking_general,
+      total_general,
+      ranking_modalidad: ranking_global,
       total_modalidad,
       ranking_regional: (higherRegional || 0) + 1,
       total_region: totalRegional || 0,
