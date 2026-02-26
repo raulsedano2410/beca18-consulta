@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { estadisticasData } from "@/lib/data/estadisticas";
 
 interface Resultado {
   dni: string;
@@ -41,16 +42,12 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState<{ totales: Totales; cortes: Corte[] } | null>(null);
+  const stats = {
+    totales: estadisticasData.totales,
+    cortes: estadisticasData.cortes as unknown as Corte[],
+  };
   const [highlighted, setHighlighted] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetch("/api/estadisticas")
-      .then((r) => r.json())
-      .then((data) => setStats({ totales: data.totales, cortes: data.cortes }))
-      .catch(() => {});
-  }, []);
 
   const buscar = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -182,8 +179,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats generales */}
-      {stats && (
-        <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-[5]">
+      <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-[5]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               label="Total Postulantes"
@@ -210,11 +206,9 @@ export default function HomePage() {
             />
           </div>
         </section>
-      )}
 
       {/* Modalidades con puntajes de corte */}
-      {stats?.cortes && (
-        <section className="max-w-7xl mx-auto px-4 py-10">
+      <section className="max-w-7xl mx-auto px-4 py-10">
           <h2 className="text-2xl font-bold mb-6 text-center">
             Puntajes de Corte por Modalidad
           </h2>
@@ -252,7 +246,6 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-      )}
 
       {/* CTA */}
       <section className="bg-blue-50 dark:bg-blue-950/30 py-10 px-4">
