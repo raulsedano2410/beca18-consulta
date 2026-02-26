@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef, useCallback } from "react";
 import Link from "next/link";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell,
-} from "recharts";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
+import { useTheme } from "@/app/components/ThemeProvider";
+import "@/lib/chart-config";
+import { getChartColors } from "@/lib/chart-config";
 
 interface ResultadoData {
   tipo: string;
@@ -194,41 +189,14 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
 
       {/* Grafico de distribucion */}
       {data.distribucion && data.distribucion.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 mb-6">
-          <h3 className="font-semibold text-sm mb-4">
-            Distribucion de puntajes — {d.modalidad as string}
-          </h3>
-          <div className="h-48 md:h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.distribucion}>
-                <XAxis
-                  dataKey="puntaje"
-                  tick={{ fontSize: 10 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(value) => [value ?? 0, "Personas"]}
-                  labelFormatter={(label) => `Puntaje: ${label}`}
-                />
-                <ReferenceLine
-                  x={puntaje}
-                  stroke="#dc2626"
-                  strokeDasharray="3 3"
-                  label={{ value: "Tu", fill: "#dc2626", fontSize: 11 }}
-                />
-                <Bar dataKey="cantidad" radius={[2, 2, 0, 0]}>
-                  {data.distribucion.map((entry) => (
-                    <Cell
-                      key={entry.puntaje}
-                      fill={entry.puntaje === puntaje ? "#dc2626" : "#3b82f6"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <DistribucionChart
+          distribucion={data.distribucion}
+          puntaje={puntaje}
+          highlightColor="#dc2626"
+          baseColor="#3b82f6"
+          titulo={`Distribucion de puntajes — ${d.modalidad as string}`}
+          referenceLines={[{ x: puntaje, color: "#dc2626", label: "Tu" }]}
+        />
       )}
 
       {/* CTA Simulador */}
@@ -347,48 +315,17 @@ function NoPreseleccionado({ data }: { data: ResultadoData }) {
 
       {/* Distribucion */}
       {data.distribucion && data.distribucion.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 mb-6">
-          <h3 className="font-semibold text-sm mb-4">
-            Distribucion de puntajes — No Preseleccionados{" "}
-            {d.modalidad as string}
-          </h3>
-          <div className="h-48 md:h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.distribucion}>
-                <XAxis
-                  dataKey="puntaje"
-                  tick={{ fontSize: 10 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(value) => [value ?? 0, "Personas"]}
-                  labelFormatter={(label) => `Puntaje: ${label}`}
-                />
-                <ReferenceLine
-                  x={corteMin}
-                  stroke="#16a34a"
-                  strokeDasharray="3 3"
-                  label={{ value: "Corte", fill: "#16a34a", fontSize: 11 }}
-                />
-                <ReferenceLine
-                  x={puntaje}
-                  stroke="#dc2626"
-                  strokeDasharray="3 3"
-                  label={{ value: "Tu", fill: "#dc2626", fontSize: 11 }}
-                />
-                <Bar dataKey="cantidad" fill="#ef4444" radius={[2, 2, 0, 0]}>
-                  {data.distribucion.map((entry) => (
-                    <Cell
-                      key={entry.puntaje}
-                      fill={entry.puntaje === puntaje ? "#dc2626" : "#fca5a5"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <DistribucionChart
+          distribucion={data.distribucion}
+          puntaje={puntaje}
+          highlightColor="#dc2626"
+          baseColor="#fca5a5"
+          titulo={`Distribucion de puntajes — No Preseleccionados ${d.modalidad as string}`}
+          referenceLines={[
+            { x: corteMin, color: "#16a34a", label: "Corte" },
+            { x: puntaje, color: "#dc2626", label: "Tu" },
+          ]}
+        />
       )}
 
       {/* Mensaje motivacional */}
@@ -607,6 +544,112 @@ function RankingCard({
       <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500">
         {sub}
       </p>
+    </div>
+  );
+}
+
+function DistribucionChart({
+  distribucion,
+  puntaje,
+  highlightColor,
+  baseColor,
+  titulo,
+  referenceLines,
+}: {
+  distribucion: { puntaje: number; cantidad: number }[];
+  puntaje: number;
+  highlightColor: string;
+  baseColor: string;
+  titulo: string;
+  referenceLines: { x: number; color: string; label: string }[];
+}) {
+  const { resolved } = useTheme();
+  const isDark = resolved === "dark";
+  const colors = getChartColors(isDark);
+
+  const chartData: ChartData<"bar"> = {
+    labels: distribucion.map((d) => d.puntaje),
+    datasets: [
+      {
+        label: "Personas",
+        data: distribucion.map((d) => d.cantidad),
+        backgroundColor: distribucion.map((d) =>
+          d.puntaje === puntaje ? highlightColor : baseColor
+        ),
+        borderRadius: 2,
+      },
+    ],
+  };
+
+  const annotationPlugin = useCallback(() => ({
+    id: "refLines",
+    afterDraw(chart: import("chart.js").Chart) {
+      const { ctx, scales } = chart;
+      const xScale = scales.x;
+      const yScale = scales.y;
+      if (!xScale || !yScale) return;
+
+      for (const ref of referenceLines) {
+        const idx = distribucion.findIndex((d) => d.puntaje === ref.x);
+        if (idx < 0) continue;
+        const xPos = xScale.getPixelForValue(idx);
+        ctx.save();
+        ctx.strokeStyle = ref.color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(xPos, yScale.top);
+        ctx.lineTo(xPos, yScale.bottom);
+        ctx.stroke();
+        // Label
+        ctx.setLineDash([]);
+        ctx.fillStyle = ref.color;
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(ref.label, xPos, yScale.top - 4);
+        ctx.restore();
+      }
+    },
+  }), [referenceLines, distribucion]);
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 600, easing: "easeOutQuart" },
+    scales: {
+      x: {
+        ticks: { color: colors.textMuted, font: { size: 10 }, maxTicksLimit: 15 },
+        grid: { display: false },
+      },
+      y: {
+        ticks: { color: colors.textMuted, font: { size: 10 } },
+        grid: { color: colors.gridColor },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipText,
+        bodyColor: colors.tooltipText,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => `Puntaje: ${items[0]?.label}`,
+          label: (ctx) => ` ${ctx.parsed.y} personas`,
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 mb-6">
+      <h3 className="font-semibold text-sm mb-4">{titulo}</h3>
+      <div className="h-48 md:h-64">
+        <Bar data={chartData} options={options} plugins={[annotationPlugin()]} />
+      </div>
     </div>
   );
 }

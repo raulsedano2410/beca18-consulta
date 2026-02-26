@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { estadisticasData } from "@/lib/data/estadisticas";
+import { useCountUp } from "@/lib/hooks/useCountUp";
 
 interface Resultado {
   dni: string;
@@ -48,6 +49,30 @@ export default function HomePage() {
   };
   const [highlighted, setHighlighted] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [visitCount, setVisitCount] = useState(0);
+  const animatedVisits = useCountUp(visitCount, 1500);
+
+  // Visitor counter
+  useEffect(() => {
+    async function trackVisit() {
+      try {
+        const visited = sessionStorage.getItem("visited");
+        if (visited) {
+          const res = await fetch("/api/visitas");
+          const data = await res.json();
+          setVisitCount(data.count || 557);
+        } else {
+          const res = await fetch("/api/visitas", { method: "POST" });
+          const data = await res.json();
+          setVisitCount(data.count || 558);
+          sessionStorage.setItem("visited", "1");
+        }
+      } catch {
+        setVisitCount(557);
+      }
+    }
+    trackVisit();
+  }, []);
 
   const buscar = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -107,10 +132,19 @@ export default function HomePage() {
           <h1 className="text-3xl md:text-5xl font-bold mb-3">
             Beca 18 — Resultados 2026
           </h1>
-          <p className="text-blue-100 dark:text-blue-200 text-base md:text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-blue-100 dark:text-blue-200 text-base md:text-lg mb-4 max-w-2xl mx-auto">
             Consulta tu resultado de preseleccion, conoce tu ranking y simula tu
             puntaje de seleccion
           </p>
+
+          {visitCount > 0 && (
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 mb-6">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-sm text-blue-100">
+                <strong className="text-white">{animatedVisits.toLocaleString()}</strong> consultas realizadas
+              </span>
+            </div>
+          )}
 
           {/* Buscador */}
           <div className="max-w-xl mx-auto relative">
@@ -209,24 +243,24 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               label="Total Postulantes"
-              value={stats.totales.total.toLocaleString()}
+              numValue={stats.totales.total}
               color="bg-white dark:bg-card"
             />
             <StatCard
               label="Preseleccionados"
-              value={stats.totales.preseleccionados.toLocaleString()}
+              numValue={stats.totales.preseleccionados}
               color="bg-green-50 dark:bg-green-950/40"
               accent="text-green-700 dark:text-green-400"
             />
             <StatCard
               label="No Preseleccionados"
-              value={stats.totales.no_preseleccionados.toLocaleString()}
+              numValue={stats.totales.no_preseleccionados}
               color="bg-red-50 dark:bg-red-950/40"
               accent="text-red-700 dark:text-red-400"
             />
             <StatCard
               label="Descalificados"
-              value={stats.totales.descalificados.toLocaleString()}
+              numValue={stats.totales.descalificados}
               color="bg-gray-50 dark:bg-gray-800"
               accent="text-gray-700 dark:text-gray-300"
             />
@@ -378,20 +412,21 @@ export default function HomePage() {
 
 function StatCard({
   label,
-  value,
+  numValue,
   color,
   accent,
 }: {
   label: string;
-  value: string;
+  numValue: number;
   color: string;
   accent?: string;
 }) {
+  const animated = useCountUp(numValue);
   return (
     <div className={`${color} rounded-xl shadow-sm border border-gray-200 dark:border-card-border p-4 text-center`}>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
       <p className={`text-xl md:text-2xl font-bold ${accent || "text-gray-800 dark:text-gray-100"}`}>
-        {value}
+        {animated.toLocaleString()}
       </p>
     </div>
   );

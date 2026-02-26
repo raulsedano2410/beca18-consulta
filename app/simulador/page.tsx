@@ -2,11 +2,17 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useCountUp } from "@/lib/hooks/useCountUp";
 import iesRaw from "@/lib/data/ies-simulador.json";
 
 const iesData = iesRaw as Record<string, { ti: string; tg: string; progs: { id: number; p: string; d: string; s: string; gr: number }[] }>;
 
-interface IES {
+// Pre-compute IES names list for step 2a
+const iesNames = Object.entries(iesData)
+  .filter(([name]) => name.length > 0)
+  .map(([name, info]) => ({ name, ti: info.ti, tg: info.tg, progCount: info.progs.length }));
+
+interface SelectedProg {
   id: number;
   ies: string;
   programa_academico: string;
@@ -80,15 +86,22 @@ function SimuladorContent() {
   const [dni, setDni] = useState(dniParam);
   const [persona, setPersona] = useState<SimulacionResult["persona"] | null>(null);
   const [buscandoDni, setBuscandoDni] = useState(false);
-  const [iesQuery, setIesQuery] = useState("");
-  const [selectedIES, setSelectedIES] = useState<IES | null>(null);
+  // Step 2a: IES name
+  const [iesNameQuery, setIesNameQuery] = useState("");
+  const [selectedIESName, setSelectedIESName] = useState<string | null>(null);
+  const [iesHighlighted, setIesHighlighted] = useState(-1);
+  const iesDropdownRef = useRef<HTMLDivElement>(null);
+  // Step 2b: Carrera
+  const [carreraQuery, setCarreraQuery] = useState("");
+  const [selectedProg, setSelectedProg] = useState<SelectedProg | null>(null);
+  const [carreraHighlighted, setCarreraHighlighted] = useState(-1);
+  const carreraDropdownRef = useRef<HTMLDivElement>(null);
+
   const [mismaRegion, setMismaRegion] = useState(true);
   const [resultado, setResultado] = useState<SimulacionResult | null>(null);
   const [simulando, setSimulando] = useState(false);
   const [errorDni, setErrorDni] = useState("");
   const [iesGrupos, setIesGrupos] = useState<IESGrupo[]>([]);
-  const [iesHighlighted, setIesHighlighted] = useState(-1);
-  const iesDropdownRef = useRef<HTMLDivElement>(null);
 
   // Cargar persona si viene DNI en URL
   useEffect(() => {
@@ -127,64 +140,79 @@ function SimuladorContent() {
     setBuscandoDni(false);
   }
 
-  // Filtrar IES localmente (sin fetch, sin limite)
-  const iesFiltered = useMemo(() => {
-    if (iesQuery.length < 2 || selectedIES) return [];
-    const q = iesQuery.toUpperCase();
-    const results: IES[] = [];
-    for (const [iesName, info] of Object.entries(iesData)) {
-      const iesMatch = iesName.includes(q);
-      for (const prog of info.progs) {
-        if (iesMatch || prog.p.includes(q)) {
-          results.push({
-            id: prog.id,
-            ies: iesName,
-            programa_academico: prog.p,
-            tipo_ies: info.ti,
-            tipo_gestion: info.tg,
-            departamento: prog.d,
-            sede_distrito: prog.s,
-          });
-        }
-      }
-    }
-    return results;
-  }, [iesQuery, selectedIES]);
+  // Step 2a: Filter IES names
+  const iesNamesFiltered = useMemo(() => {
+    if (iesNameQuery.length < 2 || selectedIESName) return [];
+    const q = iesNameQuery.toUpperCase();
+    return iesNames.filter((i) => i.name.includes(q));
+  }, [iesNameQuery, selectedIESName]);
 
-  useEffect(() => {
-    setIesHighlighted(-1);
-  }, [iesFiltered]);
+  useEffect(() => { setIesHighlighted(-1); }, [iesNamesFiltered]);
 
-  function selectIES(ies: IES) {
-    setSelectedIES(ies);
-    setIesQuery(`${ies.ies} — ${ies.programa_academico}`);
+  function selectIESName(name: string) {
+    setSelectedIESName(name);
+    setIesNameQuery(name);
     setIesHighlighted(-1);
+    // Reset carrera when IES changes
+    setCarreraQuery("");
+    setSelectedProg(null);
   }
 
   function handleIesKeyDown(e: React.KeyboardEvent) {
-    if (iesFiltered.length === 0 || selectedIES) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setIesHighlighted((h) => Math.min(h + 1, iesFiltered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setIesHighlighted((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter" && iesHighlighted >= 0) {
-      e.preventDefault();
-      selectIES(iesFiltered[iesHighlighted]);
-    }
+    if (iesNamesFiltered.length === 0 || selectedIESName) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setIesHighlighted((h) => Math.min(h + 1, iesNamesFiltered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setIesHighlighted((h) => Math.max(h - 1, 0)); }
+    else if (e.key === "Enter" && iesHighlighted >= 0) { e.preventDefault(); selectIESName(iesNamesFiltered[iesHighlighted].name); }
   }
 
-  // Scroll highlighted IES into view
   useEffect(() => {
     if (iesHighlighted >= 0 && iesDropdownRef.current) {
-      const items = iesDropdownRef.current.querySelectorAll("button");
-      items[iesHighlighted]?.scrollIntoView({ block: "nearest" });
+      iesDropdownRef.current.querySelectorAll("button")[iesHighlighted]?.scrollIntoView({ block: "nearest" });
     }
   }, [iesHighlighted]);
 
+  // Step 2b: Filter carreras of selected IES
+  const carrerasFiltered = useMemo(() => {
+    if (!selectedIESName || selectedProg) return [];
+    const progs = iesData[selectedIESName]?.progs || [];
+    if (carreraQuery.length < 1) return progs;
+    const q = carreraQuery.toUpperCase();
+    return progs.filter((p) => p.p.includes(q) || p.d.includes(q) || p.s.includes(q));
+  }, [selectedIESName, carreraQuery, selectedProg]);
+
+  useEffect(() => { setCarreraHighlighted(-1); }, [carrerasFiltered]);
+
+  function selectCarrera(prog: typeof iesData[string]["progs"][number]) {
+    if (!selectedIESName) return;
+    const info = iesData[selectedIESName];
+    setSelectedProg({
+      id: prog.id,
+      ies: selectedIESName,
+      programa_academico: prog.p,
+      tipo_ies: info.ti,
+      tipo_gestion: info.tg,
+      departamento: prog.d,
+      sede_distrito: prog.s,
+    });
+    setCarreraQuery(prog.p);
+    setCarreraHighlighted(-1);
+  }
+
+  function handleCarreraKeyDown(e: React.KeyboardEvent) {
+    if (carrerasFiltered.length === 0 || selectedProg) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setCarreraHighlighted((h) => Math.min(h + 1, carrerasFiltered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setCarreraHighlighted((h) => Math.max(h - 1, 0)); }
+    else if (e.key === "Enter" && carreraHighlighted >= 0) { e.preventDefault(); selectCarrera(carrerasFiltered[carreraHighlighted]); }
+  }
+
+  useEffect(() => {
+    if (carreraHighlighted >= 0 && carreraDropdownRef.current) {
+      carreraDropdownRef.current.querySelectorAll("button")[carreraHighlighted]?.scrollIntoView({ block: "nearest" });
+    }
+  }, [carreraHighlighted]);
+
   async function simular() {
-    if (!persona || !selectedIES) return;
+    if (!persona || !selectedProg) return;
     setSimulando(true);
     try {
       const res = await fetch("/api/simulador", {
@@ -192,7 +220,7 @@ function SimuladorContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dni: persona.dni,
-          ies_id: selectedIES.id,
+          ies_id: selectedProg.id,
           misma_region: mismaRegion,
         }),
       });
@@ -252,72 +280,157 @@ function SimuladorContent() {
         )}
       </div>
 
-      {/* Paso 2: IES */}
+      {/* Paso 2: IES + Carrera */}
       {persona && (
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 md:p-6 mb-4">
-          <h2 className="font-semibold mb-3">
-            2. Selecciona IES y programa de estudio
+          <h2 className="font-semibold mb-4">
+            2. Selecciona tu IES y carrera
           </h2>
-          <div className="relative">
-            <input
-              type="text"
-              value={iesQuery}
-              onChange={(e) => {
-                setIesQuery(e.target.value);
-                setSelectedIES(null);
-              }}
-              onKeyDown={handleIesKeyDown}
-              placeholder="Busca por nombre de IES o carrera..."
-              className="w-full border border-gray-300 dark:border-input-border dark:bg-muted-bg dark:text-foreground rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-            />
-            {iesFiltered.length > 0 && !selectedIES && (
-              <div
-                ref={iesDropdownRef}
-                className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto z-10"
-              >
-                {iesFiltered.map((ies, i) => (
-                  <button
-                    key={ies.id}
-                    onClick={() => selectIES(ies)}
-                    className={`w-full text-left px-4 py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${
-                      i === iesHighlighted
-                        ? "bg-blue-50 dark:bg-blue-900/30"
-                        : "hover:bg-blue-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
-                      {ies.ies}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {ies.programa_academico} | {ies.tipo_gestion} |{" "}
-                      {ies.departamento}
-                    </p>
-                  </button>
-                ))}
+
+          {/* 2a: Selecciona IES */}
+          <div className="mb-4">
+            <label className="text-sm text-gray-600 dark:text-gray-400 mb-1.5 block font-medium">
+              Primero, elige tu universidad o instituto
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={iesNameQuery}
+                onChange={(e) => {
+                  setIesNameQuery(e.target.value);
+                  setSelectedIESName(null);
+                  setCarreraQuery("");
+                  setSelectedProg(null);
+                }}
+                onKeyDown={handleIesKeyDown}
+                placeholder="Busca por nombre de universidad o instituto..."
+                className="w-full border border-gray-300 dark:border-input-border dark:bg-muted-bg dark:text-foreground rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              />
+              {iesNamesFiltered.length > 0 && !selectedIESName && (
+                <div
+                  ref={iesDropdownRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto z-10"
+                >
+                  {iesNamesFiltered.map((ies, i) => (
+                    <button
+                      key={ies.name}
+                      onClick={() => selectIESName(ies.name)}
+                      className={`w-full text-left px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${
+                        i === iesHighlighted
+                          ? "bg-blue-50 dark:bg-blue-900/30"
+                          : "hover:bg-blue-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                        {ies.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {ies.ti} | {ies.tg} | {ies.progCount} carreras
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {selectedIESName && (
+              <div className="mt-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2.5 text-sm flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-blue-800 dark:text-blue-300">{selectedIESName}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    {iesData[selectedIESName]?.ti} | {iesData[selectedIESName]?.tg} | {iesData[selectedIESName]?.progs.length} carreras disponibles
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedIESName(null);
+                    setIesNameQuery("");
+                    setCarreraQuery("");
+                    setSelectedProg(null);
+                  }}
+                  className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs shrink-0 ml-2 cursor-pointer"
+                >
+                  Cambiar
+                </button>
               </div>
             )}
           </div>
 
-          {selectedIES && (
-            <div className="mt-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-sm">
-              <p className="font-semibold text-blue-800 dark:text-blue-300">{selectedIES.ies}</p>
-              <p className="text-blue-700 dark:text-blue-400">
-                {selectedIES.programa_academico} | {selectedIES.tipo_gestion} |{" "}
-                {selectedIES.departamento}
-              </p>
+          {/* 2b: Selecciona Carrera */}
+          <div>
+            <label className={`text-sm mb-1.5 block font-medium ${selectedIESName ? "text-gray-600 dark:text-gray-400" : "text-gray-400 dark:text-gray-600"}`}>
+              Ahora, elige tu carrera
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={carreraQuery}
+                onChange={(e) => {
+                  setCarreraQuery(e.target.value);
+                  setSelectedProg(null);
+                }}
+                onKeyDown={handleCarreraKeyDown}
+                disabled={!selectedIESName}
+                placeholder={selectedIESName ? "Busca tu carrera..." : "Primero selecciona una IES arriba"}
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none ${
+                  selectedIESName
+                    ? "border-gray-300 dark:border-input-border dark:bg-muted-bg dark:text-foreground focus:border-blue-500"
+                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                }`}
+              />
+              {carrerasFiltered.length > 0 && !selectedProg && selectedIESName && (
+                <div
+                  ref={carreraDropdownRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto z-10"
+                >
+                  {carrerasFiltered.map((prog, i) => (
+                    <button
+                      key={prog.id}
+                      onClick={() => selectCarrera(prog)}
+                      className={`w-full text-left px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${
+                        i === carreraHighlighted
+                          ? "bg-blue-50 dark:bg-blue-900/30"
+                          : "hover:bg-blue-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                        {prog.p}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {prog.d} | {prog.s}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+            {selectedProg && (
+              <div className="mt-2 bg-green-50 dark:bg-green-950/30 rounded-lg p-2.5 text-sm flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-green-800 dark:text-green-300">{selectedProg.programa_academico}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    {selectedProg.departamento} | {selectedProg.sede_distrito} | {selectedProg.tipo_gestion}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setSelectedProg(null); setCarreraQuery(""); }}
+                  className="text-green-400 hover:text-green-600 dark:hover:text-green-300 text-xs shrink-0 ml-2 cursor-pointer"
+                >
+                  Cambiar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Paso 3: Region */}
-      {persona && selectedIES && (
+      {persona && selectedProg && (
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 md:p-6 mb-4">
           <h2 className="font-semibold mb-3">
             3. ¿Estudiaras en tu misma region?
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-            Tu region: {persona.region} | IES en: {selectedIES.departamento}
+            Tu region: {persona.region} | IES en: {selectedProg.departamento}
           </p>
           <div className="flex gap-3">
             <button
@@ -351,7 +464,7 @@ function SimuladorContent() {
       )}
 
       {/* Boton simular */}
-      {persona && selectedIES && (
+      {persona && selectedProg && (
         <div className="text-center mb-6">
           <button
             onClick={simular}
@@ -371,12 +484,7 @@ function SimuladorContent() {
               Tu Puntaje Estimado de Seleccion
             </h2>
 
-            <div className="text-center mb-6">
-              <span className="text-5xl md:text-6xl font-bold text-blue-700 dark:text-blue-400">
-                {resultado.puntaje_seleccion}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400 text-lg ml-2">/ 180</span>
-            </div>
+            <PuntajeAnimado value={resultado.puntaje_seleccion} />
 
             {/* Desglose COMPLETO - los 7 criterios de la Tabla 14 */}
             <div className="bg-white dark:bg-card rounded-xl p-4 md:p-6 mb-4">
@@ -681,6 +789,18 @@ function SimuladorContent() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function PuntajeAnimado({ value }: { value: number }) {
+  const animated = useCountUp(value, 1000);
+  return (
+    <div className="text-center mb-6">
+      <span className="text-5xl md:text-6xl font-bold text-blue-700 dark:text-blue-400">
+        {animated}
+      </span>
+      <span className="text-gray-500 dark:text-gray-400 text-lg ml-2">/ 180</span>
     </div>
   );
 }

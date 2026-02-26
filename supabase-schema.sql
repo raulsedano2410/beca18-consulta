@@ -105,6 +105,13 @@ CREATE TABLE IF NOT EXISTS causales_descalificacion (
   cantidad INTEGER NOT NULL
 );
 
+-- Contador de visitas
+CREATE TABLE IF NOT EXISTS visitas (
+  id SERIAL PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 557
+);
+INSERT INTO visitas (count) VALUES (557);
+
 -- RLS: read-only public access
 ALTER TABLE preseleccionados ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_preseleccionados ENABLE ROW LEVEL SECURITY;
@@ -113,6 +120,7 @@ ALTER TABLE ies_elegibles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reglas_puntaje ENABLE ROW LEVEL SECURITY;
 ALTER TABLE puntajes_corte ENABLE ROW LEVEL SECURITY;
 ALTER TABLE causales_descalificacion ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visitas ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read preseleccionados" ON preseleccionados FOR SELECT USING (true);
 CREATE POLICY "Public read no_preseleccionados" ON no_preseleccionados FOR SELECT USING (true);
@@ -121,3 +129,15 @@ CREATE POLICY "Public read ies_elegibles" ON ies_elegibles FOR SELECT USING (tru
 CREATE POLICY "Public read reglas_puntaje" ON reglas_puntaje FOR SELECT USING (true);
 CREATE POLICY "Public read puntajes_corte" ON puntajes_corte FOR SELECT USING (true);
 CREATE POLICY "Public read causales_descalificacion" ON causales_descalificacion FOR SELECT USING (true);
+CREATE POLICY "Public read visitas" ON visitas FOR SELECT USING (true);
+CREATE POLICY "Public update visitas" ON visitas FOR UPDATE USING (true);
+
+-- Function to atomically increment visit counter
+CREATE OR REPLACE FUNCTION increment_visitas()
+RETURNS INTEGER AS $$
+DECLARE new_count INTEGER;
+BEGIN
+  UPDATE visitas SET count = count + 1 WHERE id = 1 RETURNING count INTO new_count;
+  RETURN new_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

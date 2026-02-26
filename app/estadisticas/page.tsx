@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Doughnut, Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
+import { useTheme } from "@/app/components/ThemeProvider";
+import { useCountUp } from "@/lib/hooks/useCountUp";
+import "@/lib/chart-config"; // registers Chart.js components
+import { getChartColors } from "@/lib/chart-config";
 
 interface EstadisticasData {
   totales: {
@@ -53,14 +47,16 @@ interface EstadisticasData {
   }[];
 }
 
-const COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
-];
+function AnimatedNumber({ value }: { value: number }) {
+  const animated = useCountUp(value);
+  return <>{animated.toLocaleString()}</>;
+}
 
 export default function EstadisticasPage() {
   const [data, setData] = useState<EstadisticasData | null>(null);
   const [modalidadSel, setModalidadSel] = useState("");
+  const { resolved } = useTheme();
+  const isDark = resolved === "dark";
 
   useEffect(() => {
     fetch("/api/estadisticas")
@@ -82,12 +78,6 @@ export default function EstadisticasPage() {
     );
   }
 
-  const pieData = [
-    { name: "Preseleccionados", value: data.totales.preseleccionados, color: "#10b981" },
-    { name: "No Preseleccionados", value: data.totales.no_preseleccionados, color: "#ef4444" },
-    { name: "Descalificados", value: data.totales.descalificados, color: "#6b7280" },
-  ];
-
   const regionMap = new Map<string, { pre: number; nopre: number }>();
   data.por_region_pre.forEach((r) => {
     regionMap.set(r.region, { pre: r.total, nopre: 0 });
@@ -99,17 +89,15 @@ export default function EstadisticasPage() {
   });
   const regionData = Array.from(regionMap.entries())
     .map(([region, counts]) => ({
-      region: region.length > 12 ? region.slice(0, 10) + "..." : region,
-      regionFull: region,
-      preseleccionados: counts.pre,
-      no_preseleccionados: counts.nopre,
+      region,
+      regionShort: region.length > 12 ? region.slice(0, 10) + "..." : region,
+      pre: counts.pre,
+      nopre: counts.nopre,
       total: counts.pre + counts.nopre,
     }))
     .sort((a, b) => b.total - a.total);
 
-  const top10Filtered = data.top10.filter(
-    (t) => t.modalidad === modalidadSel
-  );
+  const top10Filtered = data.top10.filter((t) => t.modalidad === modalidadSel);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-10">
@@ -117,116 +105,30 @@ export default function EstadisticasPage() {
         Estadisticas del Concurso
       </h1>
 
-      {/* Proporcion general */}
+      {/* Charts row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
           <h2 className="font-semibold text-sm mb-4">
-            Distribucion general ({data.totales.total.toLocaleString()}{" "}
-            postulantes)
+            Distribucion general (<AnimatedNumber value={data.totales.total} /> postulantes)
           </h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={(props) =>
-                    `${props.name ?? ''}: ${(((props.percent as number) ?? 0) * 100).toFixed(1)}%`
-                  }
-                  labelLine={false}
-                >
-                  {pieData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <DoughnutChart data={data} isDark={isDark} />
         </div>
 
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
           <h2 className="font-semibold text-sm mb-4">
             Puntajes de corte por modalidad
           </h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data.cortes.map((c) => ({
-                  ...c,
-                  modalidad:
-                    c.modalidad.length > 15
-                      ? c.modalidad.slice(0, 13) + "..."
-                      : c.modalidad,
-                }))}
-                layout="vertical"
-              >
-                <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis
-                  dataKey="modalidad"
-                  type="category"
-                  tick={{ fontSize: 9 }}
-                  width={100}
-                />
-                <Tooltip />
-                <Bar
-                  dataKey="min_preseleccionado"
-                  fill="#3b82f6"
-                  name="Puntaje de corte"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <CortesBarChart cortes={data.cortes} isDark={isDark} />
         </div>
       </div>
 
-      {/* Por region */}
+      {/* Region chart */}
       <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 mb-8">
         <h2 className="font-semibold text-sm mb-4">Postulantes por region</h2>
-        <div className="h-72 md:h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={regionData}>
-              <XAxis
-                dataKey="region"
-                tick={{ fontSize: 8 }}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip
-                labelFormatter={(_, payload) => {
-                  if (payload?.[0]) {
-                    return (payload[0].payload as typeof regionData[number]).regionFull;
-                  }
-                  return '';
-                }}
-                formatter={(v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-              />
-              <Legend />
-              <Bar
-                dataKey="preseleccionados"
-                fill="#10b981"
-                name="Preseleccionados"
-                stackId="a"
-              />
-              <Bar
-                dataKey="no_preseleccionados"
-                fill="#fca5a5"
-                name="No Preseleccionados"
-                stackId="a"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <RegionBarChart regionData={regionData} isDark={isDark} />
       </div>
 
-      {/* Por modalidad */}
+      {/* Modalidades table */}
       <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 mb-8">
         <h2 className="font-semibold text-sm mb-4">
           Preseleccionados por modalidad
@@ -328,12 +230,246 @@ export default function EstadisticasPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{c.causal_descripcion}</p>
               </div>
               <span className="font-bold text-lg shrink-0">
-                {c.cantidad.toLocaleString()}
+                <AnimatedNumber value={c.cantidad} />
               </span>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- Chart Components ---
+
+function DoughnutChart({ data, isDark }: { data: EstadisticasData; isDark: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colors = getChartColors(isDark);
+
+  const chartData: ChartData<"doughnut"> = {
+    labels: ["Preseleccionados", "No Preseleccionados", "Descalificados"],
+    datasets: [
+      {
+        data: [
+          data.totales.preseleccionados,
+          data.totales.no_preseleccionados,
+          data.totales.descalificados,
+        ],
+        backgroundColor: ["#10b981", "#ef4444", "#6b7280"],
+        borderColor: isDark ? "#1f2937" : "#ffffff",
+        borderWidth: 3,
+        borderRadius: 4,
+        hoverOffset: 8,
+      },
+    ],
+  };
+
+  const centerTextPlugin = useCallback(() => ({
+    id: "centerText",
+    afterDraw(chart: import("chart.js").Chart) {
+      const { ctx, width, height } = chart;
+      ctx.save();
+      ctx.font = `bold ${Math.min(width, height) * 0.09}px sans-serif`;
+      ctx.fillStyle = isDark ? "#f3f4f6" : "#111827";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(data.totales.total.toLocaleString(), width / 2, height / 2 - 8);
+      ctx.font = `${Math.min(width, height) * 0.05}px sans-serif`;
+      ctx.fillStyle = isDark ? "#9ca3af" : "#6b7280";
+      ctx.fillText("total", width / 2, height / 2 + 14);
+      ctx.restore();
+    },
+  }), [isDark, data.totales.total]);
+
+  const options: ChartOptions<"doughnut"> = {
+    cutout: "60%",
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 800, easing: "easeOutQuart" },
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: { color: colors.text, padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } },
+      },
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipText,
+        bodyColor: colors.tooltipText,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.parsed;
+            const pct = ((v / data.totales.total) * 100).toFixed(1);
+            return ` ${ctx.label}: ${v.toLocaleString()} (${pct}%)`;
+          },
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="h-64">
+      <Doughnut ref={canvasRef as never} data={chartData} options={options} plugins={[centerTextPlugin()]} />
+    </div>
+  );
+}
+
+function CortesBarChart({
+  cortes,
+  isDark,
+}: {
+  cortes: EstadisticasData["cortes"];
+  isDark: boolean;
+}) {
+  const colors = getChartColors(isDark);
+  const sorted = [...cortes].sort((a, b) => a.min_preseleccionado - b.min_preseleccionado);
+
+  const chartData: ChartData<"bar"> = {
+    labels: sorted.map((c) =>
+      c.modalidad.length > 15 ? c.modalidad.slice(0, 13) + "..." : c.modalidad
+    ),
+    datasets: [
+      {
+        label: "Puntaje de corte",
+        data: sorted.map((c) => c.min_preseleccionado),
+        backgroundColor: isDark ? "rgba(59,130,246,0.7)" : "rgba(59,130,246,0.8)",
+        borderColor: "#3b82f6",
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      },
+    ],
+  };
+
+  const options: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 800, easing: "easeOutQuart" },
+    scales: {
+      x: {
+        ticks: { color: colors.textMuted, font: { size: 10 } },
+        grid: { color: colors.gridColor },
+      },
+      y: {
+        ticks: { color: colors.textMuted, font: { size: 9 } },
+        grid: { display: false },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipText,
+        bodyColor: colors.tooltipText,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => {
+            const idx = items[0]?.dataIndex;
+            return idx !== undefined ? sorted[idx].modalidad : "";
+          },
+          label: (ctx) => ` Puntaje minimo: ${ctx.parsed.x}`,
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="h-64">
+      <Bar data={chartData} options={options} />
+    </div>
+  );
+}
+
+function RegionBarChart({
+  regionData,
+  isDark,
+}: {
+  regionData: { region: string; regionShort: string; pre: number; nopre: number; total: number }[];
+  isDark: boolean;
+}) {
+  const colors = getChartColors(isDark);
+
+  const chartData: ChartData<"bar"> = {
+    labels: regionData.map((r) => r.regionShort),
+    datasets: [
+      {
+        label: "Preseleccionados",
+        data: regionData.map((r) => r.pre),
+        backgroundColor: "rgba(16,185,129,0.8)",
+        borderColor: "#10b981",
+        borderWidth: 1,
+        borderRadius: { topLeft: 6, topRight: 6 },
+        stack: "a",
+      },
+      {
+        label: "No Preseleccionados",
+        data: regionData.map((r) => r.nopre),
+        backgroundColor: "rgba(252,165,165,0.7)",
+        borderColor: "#fca5a5",
+        borderWidth: 1,
+        borderRadius: { topLeft: 6, topRight: 6 },
+        stack: "a",
+      },
+    ],
+  };
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 800, easing: "easeOutQuart" },
+    scales: {
+      x: {
+        ticks: { color: colors.textMuted, font: { size: 8 }, maxRotation: 45, minRotation: 45 },
+        grid: { display: false },
+        stacked: true,
+      },
+      y: {
+        ticks: {
+          color: colors.textMuted,
+          font: { size: 10 },
+          callback: (v) => {
+            const num = Number(v);
+            return num >= 1000 ? `${(num / 1000).toFixed(0)}k` : String(v);
+          },
+        },
+        grid: { color: colors.gridColor },
+        stacked: true,
+      },
+    },
+    plugins: {
+      legend: {
+        position: "top",
+        labels: { color: colors.text, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 }, padding: 16 },
+      },
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipText,
+        bodyColor: colors.tooltipText,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => {
+            const idx = items[0]?.dataIndex;
+            return idx !== undefined ? regionData[idx].region : "";
+          },
+          label: (ctx) => ` ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="h-72 md:h-96">
+      <Bar data={chartData} options={options} />
     </div>
   );
 }
