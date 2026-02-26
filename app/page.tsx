@@ -288,43 +288,69 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <SourceCard
             icon="documento"
-            title="RJ N° 509-2026-MINEDU/VMGI-PRONABEC-DIBEC"
-            desc="Resolucion Jefatural con los resultados oficiales de preseleccion"
-            url="https://cdn.www.gob.pe/uploads/document/file/7778148/7778148-rj-n-509-2026-minedu-vmgi-pronabec-dibec.pdf"
-          />
-          <SourceCard
-            icon="libro"
-            title="Bases del Concurso Beca 18 - 2026"
-            desc="Documento completo con requisitos, formula de puntaje y proceso de seleccion"
-            url="https://cdn.www.gob.pe/uploads/document/file/7453025/7453025-bases-concurso-beca-18-2026.pdf"
+            title="RJ N° 509-2026 — Resultados de Preseleccion"
+            desc="Resolucion Jefatural que aprueba los resultados oficiales de la etapa de preseleccion"
           />
           <SourceCard
             icon="lista"
-            title="Lista de IES Elegibles"
-            desc="5,541 programas academicos aprobados para Beca 18"
-            url="https://www.pronabec.gob.pe/beca-18"
+            title="Anexo 1 — Lista de Preseleccionados"
+            desc="PDF oficial con los 16,148 postulantes preseleccionados y sus puntajes"
+          />
+          <SourceCard
+            icon="lista"
+            title="Anexo 2 — Lista de No Preseleccionados"
+            desc="PDF oficial con los 73,162 postulantes no preseleccionados"
+          />
+          <SourceCard
+            icon="libro"
+            title="Expediente Tecnico — Bases del Concurso 2026"
+            desc="RDE N° 033-2026: requisitos, formula de puntaje y proceso de seleccion"
+          />
+          <SourceCard
+            icon="documento"
+            title="RJ N° 508-2026 — IES Elegibles"
+            desc="5,541 programas en universidades, institutos y escuelas aprobados para Beca 18"
           />
           <SourceCard
             icon="ranking"
             title="Clasificacion de Universidades y EESP"
             desc="Grupos 1, 2 y 3 para el calculo del puntaje de seleccion"
-            url="https://www.pronabec.gob.pe/beca-18"
           />
           <SourceCard
             icon="ranking"
             title="Clasificacion de Institutos Tecnologicos"
             desc="Grupos 1, 2 y 3 de institutos y escuelas tecnologicas"
-            url="https://www.pronabec.gob.pe/beca-18"
+          />
+          <SourceCard
+            icon="libro"
+            title="Temario del Examen Nacional de Preseleccion"
+            desc="Contenidos evaluados en el ENP de Beca 18"
           />
           <SourceCard
             icon="web"
-            title="PRONABEC - Sitio Oficial"
-            desc="Pagina oficial del Programa Nacional de Becas y Credito Educativo"
-            url="https://www.pronabec.gob.pe"
+            title="PRONABEC — Pagina Oficial Beca 18"
+            desc="Todos estos documentos estan disponibles para descarga en el sitio oficial"
+            highlight
           />
+        </div>
+        <div className="text-center">
+          <a
+            href="https://www.pronabec.gob.pe/beca-18/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors shadow-md cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+            Ver todos los documentos en pronabec.gob.pe
+          </a>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            Enlace directo al sitio oficial del gobierno peruano
+          </p>
         </div>
       </section>
 
@@ -375,12 +401,12 @@ function SourceCard({
   icon,
   title,
   desc,
-  url,
+  highlight,
 }: {
   icon: "documento" | "libro" | "lista" | "ranking" | "web";
   title: string;
   desc: string;
-  url: string;
+  highlight?: boolean;
 }) {
   const icons = {
     documento: (
@@ -411,29 +437,30 @@ function SourceCard({
   };
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all flex gap-3 items-start"
+    <div
+      className={`rounded-xl border p-4 flex gap-3 items-start ${
+        highlight
+          ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+          : "bg-white dark:bg-card border-gray-200 dark:border-card-border"
+      }`}
     >
-      <div className="shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/40 dark:group-hover:text-blue-400 transition-colors">
+      <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+        highlight
+          ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+          : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+      }`}>
         {icons[icon]}
       </div>
       <div className="min-w-0">
-        <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-100 leading-tight mb-1 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+        <h3 className={`font-semibold text-sm leading-tight mb-1 ${
+          highlight ? "text-green-800 dark:text-green-200" : "text-gray-800 dark:text-gray-100"
+        }`}>
           {title}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
           {desc}
         </p>
-        <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 mt-1.5 font-medium">
-          Ver documento
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-          </svg>
-        </span>
       </div>
-    </a>
+    </div>
   );
 }

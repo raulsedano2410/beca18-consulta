@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import iesRaw from "@/lib/data/ies-simulador.json";
+
+const iesData = iesRaw as Record<string, { ti: string; tg: string; progs: { id: number; p: string; d: string; s: string; gr: number }[] }>;
 
 interface IES {
   id: number;
@@ -78,7 +81,6 @@ function SimuladorContent() {
   const [persona, setPersona] = useState<SimulacionResult["persona"] | null>(null);
   const [buscandoDni, setBuscandoDni] = useState(false);
   const [iesQuery, setIesQuery] = useState("");
-  const [iesList, setIesList] = useState<IES[]>([]);
   const [selectedIES, setSelectedIES] = useState<IES | null>(null);
   const [mismaRegion, setMismaRegion] = useState(true);
   const [resultado, setResultado] = useState<SimulacionResult | null>(null);
@@ -125,43 +127,51 @@ function SimuladorContent() {
     setBuscandoDni(false);
   }
 
-  // Buscar IES con debounce
-  useEffect(() => {
-    if (iesQuery.length < 2) {
-      setIesList([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/ies?q=${encodeURIComponent(iesQuery)}`);
-        const data = await res.json();
-        setIesList(data.ies || []);
-        setIesHighlighted(-1);
-      } catch {
-        setIesList([]);
+  // Filtrar IES localmente (sin fetch, sin limite)
+  const iesFiltered = useMemo(() => {
+    if (iesQuery.length < 2 || selectedIES) return [];
+    const q = iesQuery.toUpperCase();
+    const results: IES[] = [];
+    for (const [iesName, info] of Object.entries(iesData)) {
+      const iesMatch = iesName.includes(q);
+      for (const prog of info.progs) {
+        if (iesMatch || prog.p.includes(q)) {
+          results.push({
+            id: prog.id,
+            ies: iesName,
+            programa_academico: prog.p,
+            tipo_ies: info.ti,
+            tipo_gestion: info.tg,
+            departamento: prog.d,
+            sede_distrito: prog.s,
+          });
+        }
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [iesQuery]);
+    }
+    return results;
+  }, [iesQuery, selectedIES]);
+
+  useEffect(() => {
+    setIesHighlighted(-1);
+  }, [iesFiltered]);
 
   function selectIES(ies: IES) {
     setSelectedIES(ies);
     setIesQuery(`${ies.ies} — ${ies.programa_academico}`);
-    setIesList([]);
     setIesHighlighted(-1);
   }
 
   function handleIesKeyDown(e: React.KeyboardEvent) {
-    if (iesList.length === 0 || selectedIES) return;
+    if (iesFiltered.length === 0 || selectedIES) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setIesHighlighted((h) => Math.min(h + 1, iesList.length - 1));
+      setIesHighlighted((h) => Math.min(h + 1, iesFiltered.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setIesHighlighted((h) => Math.max(h - 1, 0));
     } else if (e.key === "Enter" && iesHighlighted >= 0) {
       e.preventDefault();
-      selectIES(iesList[iesHighlighted]);
+      selectIES(iesFiltered[iesHighlighted]);
     }
   }
 
@@ -260,12 +270,12 @@ function SimuladorContent() {
               placeholder="Busca por nombre de IES o carrera..."
               className="w-full border border-gray-300 dark:border-input-border dark:bg-muted-bg dark:text-foreground rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
             />
-            {iesList.length > 0 && !selectedIES && (
+            {iesFiltered.length > 0 && !selectedIES && (
               <div
                 ref={iesDropdownRef}
                 className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto z-10"
               >
-                {iesList.map((ies, i) => (
+                {iesFiltered.map((ies, i) => (
                   <button
                     key={ies.id}
                     onClick={() => selectIES(ies)}
