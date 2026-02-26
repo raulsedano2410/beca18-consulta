@@ -1,28 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import iesData from "@/lib/data/ies.json";
 
 export async function GET() {
-  try {
-    const { data } = await supabase
-      .from("ies_elegibles")
-      .select("ies, tipo_ies, tipo_gestion, grupo")
-      .not("grupo", "is", null)
-      .order("grupo")
-      .order("tipo_ies")
-      .order("ies");
+  const withGrupo = iesData
+    .filter((r) => r.grupo != null)
+    .sort((a, b) => (a.grupo ?? 0) - (b.grupo ?? 0) || a.tipo_ies.localeCompare(b.tipo_ies) || a.ies.localeCompare(b.ies));
 
-    // Deduplicate by ies name (multiple programs same IES)
-    const seen = new Set<string>();
-    const grupos = (data || []).filter((r) => {
-      const key = `${r.ies}|${r.grupo}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  const seen = new Set<string>();
+  const grupos = withGrupo.filter((r) => {
+    const key = `${r.ies}|${r.grupo}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map((r) => ({
+    ies: r.ies,
+    tipo_ies: r.tipo_ies,
+    tipo_gestion: r.tipo_gestion,
+    grupo: r.grupo,
+  }));
 
-    return NextResponse.json({ grupos });
-  } catch (error) {
-    console.error("Error fetching IES grupos:", error);
-    return NextResponse.json({ grupos: [] }, { status: 500 });
-  }
+  return NextResponse.json({ grupos });
 }

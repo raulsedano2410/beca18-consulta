@@ -121,12 +121,13 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
       </div>
 
       {/* Puntajes */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <ScoreCard label="Puntaje Final" value={puntaje} big />
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <ScoreCard label="Puntaje Final" value={puntaje} big accent="green" />
         <ScoreCard label="Puntaje ENP" value={d.puntaje_enp as number} />
         <ScoreCard
           label="Cond. Priorizables"
           value={d.condiciones_priorizables as number}
+          accent="purple"
         />
         {d.caracteristicas_labor_docente != null && (
           <ScoreCard
@@ -138,44 +139,30 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
 
       {/* Rankings */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ranking General</p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-            #{data.ranking_general?.toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            de {data.total_general?.toLocaleString()} preseleccionados
-          </p>
-        </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-            Ranking en {d.modalidad as string}
-          </p>
-          <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
-            #{data.ranking_modalidad?.toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            de {data.total_modalidad?.toLocaleString()} en tu modalidad
-          </p>
-        </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-            Ranking en {d.region as string}
-          </p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-            #{data.ranking_regional?.toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            de {data.total_region?.toLocaleString()} en tu region
-          </p>
-        </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Percentil en modalidad</p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">Top {data.percentil}%</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {data.mismo_puntaje_global} con tu mismo puntaje
-          </p>
-        </div>
+        <RankingCard
+          label="Ranking General"
+          value={`#${data.ranking_general?.toLocaleString()}`}
+          sub={`de ${data.total_general?.toLocaleString()}`}
+          icon="general"
+        />
+        <RankingCard
+          label={`En ${(d.modalidad as string).replace('BECA 18 ', '').replace('BECA ', '')}`}
+          value={`#${data.ranking_modalidad?.toLocaleString()}`}
+          sub={`de ${data.total_modalidad?.toLocaleString()}`}
+          icon="modalidad"
+        />
+        <RankingCard
+          label={`En ${d.region as string}`}
+          value={`#${data.ranking_regional?.toLocaleString()}`}
+          sub={`de ${data.total_region?.toLocaleString()}`}
+          icon="region"
+        />
+        <RankingCard
+          label="Percentil"
+          value={`Top ${data.percentil}%`}
+          sub={`${data.mismo_puntaje_global} con igual puntaje`}
+          icon="percentil"
+        />
       </div>
 
       {/* Dato clave */}
@@ -532,21 +519,30 @@ function ScoreCard({
   label,
   value,
   big,
+  accent,
 }: {
   label: string;
   value: number;
   big?: boolean;
+  accent?: "green" | "blue" | "purple";
 }) {
+  const colors = {
+    green: "from-green-500/10 to-green-600/5 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400",
+    blue: "from-blue-500/10 to-blue-600/5 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400",
+    purple: "from-purple-500/10 to-purple-600/5 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400",
+  };
+  const c = colors[accent || "blue"];
+
   return (
     <div
-      className={`bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 text-center ${
+      className={`bg-gradient-to-br ${c} rounded-xl border p-4 md:p-5 flex flex-col items-center justify-center ${
         big ? "col-span-2 md:col-span-1" : ""
       }`}
     >
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+      <p className="text-[11px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{label}</p>
       <p
-        className={`font-bold text-blue-700 dark:text-blue-400 ${
-          big ? "text-3xl md:text-4xl" : "text-xl md:text-2xl"
+        className={`font-extrabold leading-none ${
+          big ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"
         }`}
       >
         {value}
@@ -555,14 +551,74 @@ function ScoreCard({
   );
 }
 
+function RankingCard({
+  label,
+  value,
+  sub,
+  icon,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: "general" | "modalidad" | "region" | "percentil";
+}) {
+  const iconMap = {
+    general: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5-3L16.5 18m0 0L12 13.5m4.5 4.5V4.5" />
+      </svg>
+    ),
+    modalidad: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+      </svg>
+    ),
+    region: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+      </svg>
+    ),
+    percentil: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+      </svg>
+    ),
+  };
+
+  const colors = {
+    general: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40",
+    modalidad: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40",
+    region: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40",
+    percentil: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40",
+  };
+
+  return (
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 md:p-5 flex flex-col items-center text-center gap-2">
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${colors[icon]}`}>
+        {iconMap[icon]}
+      </div>
+      <p className="text-[10px] md:text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-tight">
+        {label}
+      </p>
+      <p className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white leading-none">
+        {value}
+      </p>
+      <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500">
+        {sub}
+      </p>
+    </div>
+  );
+}
+
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-lg font-bold">
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 flex flex-col items-center gap-1">
+      <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white">
         {value.toLocaleString()}
       </p>
-      <p className="text-xs text-gray-400">personas</p>
+      <p className="text-[10px] text-gray-400 dark:text-gray-500">personas</p>
     </div>
   );
 }

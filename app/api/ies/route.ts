@@ -1,5 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import iesData from '@/lib/data/ies.json';
+
+const DEPARTAMENTOS = [
+  'AMAZONAS', 'ANCASH', 'APURIMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA',
+  'CALLAO', 'CUSCO', 'HUANCAVELICA', 'HUANUCO', 'ICA', 'JUNIN',
+  'LA LIBERTAD', 'LAMBAYEQUE', 'LIMA', 'LORETO', 'MADRE DE DIOS',
+  'MOQUEGUA', 'PASCO', 'PIURA', 'PUNO', 'SAN MARTIN', 'TACNA', 'TUMBES', 'UCAYALI',
+];
+
+const TIPOS_IES = [
+  'ESCUELA DE EDUCACION SUPERIOR PEDAGOGICA',
+  'ESCUELA DE EDUCACION SUPERIOR TECNOLOGICA',
+  'INSTITUTO DE EDUCACION SUPERIOR TECNOLOGICA',
+  'UNIVERSIDAD',
+];
+
+type IESRow = typeof iesData[number];
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -9,53 +25,38 @@ export async function GET(request: NextRequest) {
   const gestion = sp.get('gestion');
   const page = parseInt(sp.get('page') || '1');
   const limit = 50;
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
 
-  // Build query
-  let query = supabase.from('ies_elegibles').select('*', { count: 'exact' });
+  let filtered: IESRow[] = iesData;
 
   if (q && q.length >= 2) {
-    query = query.or(`ies.ilike.%${q}%,programa_academico.ilike.%${q}%`);
+    const qUp = q.toUpperCase();
+    filtered = filtered.filter(
+      (r) => r.ies.toUpperCase().includes(qUp) || r.programa_academico.toUpperCase().includes(qUp)
+    );
   }
   if (depto) {
-    query = query.eq('departamento', depto);
+    filtered = filtered.filter((r) => r.departamento === depto);
   }
   if (tipo) {
-    query = query.eq('tipo_ies', tipo);
+    filtered = filtered.filter((r) => r.tipo_ies === tipo);
   }
   if (gestion) {
-    query = query.eq('tipo_gestion', gestion);
+    filtered = filtered.filter((r) => r.tipo_gestion === gestion);
   }
 
-  const { data, count } = await query
-    .order('ies')
-    .order('programa_academico')
-    .range(from, to);
-
-  // Filters (distinct values)
-  const { data: deptos } = await supabase
-    .from('ies_elegibles')
-    .select('departamento')
-    .order('departamento');
-  const { data: tipos } = await supabase
-    .from('ies_elegibles')
-    .select('tipo_ies')
-    .order('tipo_ies');
-
-  const uniqueDeptos = [...new Set((deptos || []).map((d) => d.departamento))];
-  const uniqueTipos = [...new Set((tipos || []).map((t) => t.tipo_ies))];
-
-  const total = count || 0;
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / limit);
+  const from = (page - 1) * limit;
+  const data = filtered.slice(from, from + limit);
 
   return NextResponse.json({
-    ies: data || [],
+    ies: data,
     total,
     page,
-    totalPages: Math.ceil(total / limit),
+    totalPages,
     filtros: {
-      departamentos: uniqueDeptos,
-      tipos_ies: uniqueTipos,
+      departamentos: DEPARTAMENTOS,
+      tipos_ies: TIPOS_IES,
     },
   });
 }
