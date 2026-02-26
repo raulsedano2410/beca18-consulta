@@ -178,8 +178,34 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Sobre este sitio */}
+      <section className="max-w-4xl mx-auto px-4 mt-8 mb-2">
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 md:p-6">
+          <div className="flex gap-4 items-start">
+            <div className="shrink-0 w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-blue-900 dark:text-blue-200 text-sm md:text-base mb-1">
+                ¿Quien hizo esta pagina?
+              </h3>
+              <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                Soy <strong>Raul Sedano</strong>, programador e ingeniero. Cree esta herramienta para ayudar a mi hija a entender su resultado
+                de preseleccion y simular opciones que le den un mejor puntaje de seleccion para ganar su beca. La comparto con todas las
+                familias que estan en la misma situacion.
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                Este sitio no almacena datos personales. Solo consulta informacion publica publicada por PRONABEC.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats generales */}
-      <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-[5]">
+      <section className="max-w-7xl mx-auto px-4 mt-6 relative z-[5]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               label="Total Postulantes"
@@ -247,6 +273,61 @@ export default function HomePage() {
           </div>
         </section>
 
+      {/* Fuentes oficiales */}
+      <section className="max-w-7xl mx-auto px-4 py-10">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-full px-4 py-1.5 mb-4">
+            <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+            </svg>
+            <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">Informacion 100% oficial</span>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Fuentes y documentos oficiales</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xl mx-auto">
+            Todos los datos de esta pagina provienen exclusivamente de documentos publicados por PRONABEC en su sitio web oficial.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SourceCard
+            icon="documento"
+            title="RJ N° 509-2026-MINEDU/VMGI-PRONABEC-DIBEC"
+            desc="Resolucion Jefatural con los resultados oficiales de preseleccion"
+            url="https://cdn.www.gob.pe/uploads/document/file/7778148/7778148-rj-n-509-2026-minedu-vmgi-pronabec-dibec.pdf"
+          />
+          <SourceCard
+            icon="libro"
+            title="Bases del Concurso Beca 18 - 2026"
+            desc="Documento completo con requisitos, formula de puntaje y proceso de seleccion"
+            url="https://cdn.www.gob.pe/uploads/document/file/7453025/7453025-bases-concurso-beca-18-2026.pdf"
+          />
+          <SourceCard
+            icon="lista"
+            title="Lista de IES Elegibles"
+            desc="5,541 programas academicos aprobados para Beca 18"
+            url="https://www.pronabec.gob.pe/beca-18"
+          />
+          <SourceCard
+            icon="ranking"
+            title="Clasificacion de Universidades y EESP"
+            desc="Grupos 1, 2 y 3 para el calculo del puntaje de seleccion"
+            url="https://www.pronabec.gob.pe/beca-18"
+          />
+          <SourceCard
+            icon="ranking"
+            title="Clasificacion de Institutos Tecnologicos"
+            desc="Grupos 1, 2 y 3 de institutos y escuelas tecnologicas"
+            url="https://www.pronabec.gob.pe/beca-18"
+          />
+          <SourceCard
+            icon="web"
+            title="PRONABEC - Sitio Oficial"
+            desc="Pagina oficial del Programa Nacional de Becas y Credito Educativo"
+            url="https://www.pronabec.gob.pe"
+          />
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-blue-50 dark:bg-blue-950/30 py-10 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -287,5 +368,72 @@ function StatCard({
         {value}
       </p>
     </div>
+  );
+}
+
+function SourceCard({
+  icon,
+  title,
+  desc,
+  url,
+}: {
+  icon: "documento" | "libro" | "lista" | "ranking" | "web";
+  title: string;
+  desc: string;
+  url: string;
+}) {
+  const icons = {
+    documento: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+    ),
+    libro: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+    lista: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+      </svg>
+    ),
+    ranking: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.77.853 6.023 6.023 0 0 1-2.77-.853" />
+      </svg>
+    ),
+    web: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+      </svg>
+    ),
+  };
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all flex gap-3 items-start"
+    >
+      <div className="shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/40 dark:group-hover:text-blue-400 transition-colors">
+        {icons[icon]}
+      </div>
+      <div className="min-w-0">
+        <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-100 leading-tight mb-1 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+          {title}
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          {desc}
+        </p>
+        <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 mt-1.5 font-medium">
+          Ver documento
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+        </span>
+      </div>
+    </a>
   );
 }
