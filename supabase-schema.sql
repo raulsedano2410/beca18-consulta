@@ -105,12 +105,15 @@ CREATE TABLE IF NOT EXISTS causales_descalificacion (
   cantidad INTEGER NOT NULL
 );
 
--- Contador de visitas
+-- Contador de visitas (log de eventos: cada uso agrega una fila)
 CREATE TABLE IF NOT EXISTS visitas (
   id SERIAL PRIMARY KEY,
-  count INTEGER NOT NULL DEFAULT 557
+  valor INTEGER NOT NULL DEFAULT 1,
+  tipo VARCHAR(20) NOT NULL DEFAULT 'visita',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-INSERT INTO visitas (count) VALUES (557);
+-- Fila base con el conteo inicial
+INSERT INTO visitas (valor, tipo) VALUES (557, 'base');
 
 -- RLS: read-only public access
 ALTER TABLE preseleccionados ENABLE ROW LEVEL SECURITY;
@@ -130,14 +133,15 @@ CREATE POLICY "Public read reglas_puntaje" ON reglas_puntaje FOR SELECT USING (t
 CREATE POLICY "Public read puntajes_corte" ON puntajes_corte FOR SELECT USING (true);
 CREATE POLICY "Public read causales_descalificacion" ON causales_descalificacion FOR SELECT USING (true);
 CREATE POLICY "Public read visitas" ON visitas FOR SELECT USING (true);
-CREATE POLICY "Public update visitas" ON visitas FOR UPDATE USING (true);
+CREATE POLICY "Public insert visitas" ON visitas FOR INSERT WITH CHECK (true);
 
--- Function to atomically increment visit counter
-CREATE OR REPLACE FUNCTION increment_visitas()
+-- Function para registrar un uso y devolver el total
+CREATE OR REPLACE FUNCTION registrar_visita(p_tipo VARCHAR DEFAULT 'visita')
 RETURNS INTEGER AS $$
-DECLARE new_count INTEGER;
+DECLARE total INTEGER;
 BEGIN
-  UPDATE visitas SET count = count + 1 WHERE id = 1 RETURNING count INTO new_count;
-  RETURN new_count;
+  INSERT INTO visitas (valor, tipo) VALUES (1, p_tipo);
+  SELECT SUM(valor) INTO total FROM visitas;
+  RETURN total;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

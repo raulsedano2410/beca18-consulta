@@ -102,6 +102,16 @@ function SimuladorContent() {
   const [simulando, setSimulando] = useState(false);
   const [errorDni, setErrorDni] = useState("");
   const [iesGrupos, setIesGrupos] = useState<IESGrupo[]>([]);
+  const [visitCount, setVisitCount] = useState(0);
+  const animatedVisits = useCountUp(visitCount, 1500);
+
+  // Leer contador al cargar
+  useEffect(() => {
+    fetch("/api/visitas")
+      .then((r) => r.json())
+      .then((d) => setVisitCount(d.count || 557))
+      .catch(() => setVisitCount(557));
+  }, []);
 
   // Cargar persona si viene DNI en URL
   useEffect(() => {
@@ -226,6 +236,15 @@ function SimuladorContent() {
       });
       const data = await res.json();
       setResultado(data);
+      // Registrar uso del simulador y actualizar contador en vivo
+      fetch("/api/visitas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "simulador" }),
+      })
+        .then((r) => r.json())
+        .then((d) => { if (d.count) setVisitCount(d.count); })
+        .catch(() => {});
       if (iesGrupos.length === 0) {
         fetch("/api/ies-grupos")
           .then((r) => r.json())
@@ -240,9 +259,17 @@ function SimuladorContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">
-        Simulador de Seleccion
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold">
+          Simulador de Seleccion
+        </h1>
+        {visitCount > 0 && (
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            {animatedVisits.toLocaleString()} usos
+          </span>
+        )}
+      </div>
       <p className="text-gray-600 dark:text-gray-400 text-sm mb-8">
         Estima tu puntaje de seleccion eligiendo tu IES y carrera preferida.
       </p>

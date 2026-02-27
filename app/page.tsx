@@ -52,26 +52,12 @@ export default function HomePage() {
   const [visitCount, setVisitCount] = useState(0);
   const animatedVisits = useCountUp(visitCount, 1500);
 
-  // Visitor counter
+  // Leer contador al cargar (solo lectura)
   useEffect(() => {
-    async function trackVisit() {
-      try {
-        const visited = sessionStorage.getItem("visited");
-        if (visited) {
-          const res = await fetch("/api/visitas");
-          const data = await res.json();
-          setVisitCount(data.count || 557);
-        } else {
-          const res = await fetch("/api/visitas", { method: "POST" });
-          const data = await res.json();
-          setVisitCount(data.count || 558);
-          sessionStorage.setItem("visited", "1");
-        }
-      } catch {
-        setVisitCount(557);
-      }
-    }
-    trackVisit();
+    fetch("/api/visitas")
+      .then((r) => r.json())
+      .then((d) => setVisitCount(d.count || 557))
+      .catch(() => setVisitCount(557));
   }, []);
 
   const buscar = useCallback(async (q: string) => {
@@ -99,6 +85,15 @@ export default function HomePage() {
   const irAResultado = (dni: string) => {
     setResultados([]);
     setQuery("");
+    // Registrar consulta y actualizar contador en vivo
+    fetch("/api/visitas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipo: "consulta" }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.count) setVisitCount(d.count); })
+      .catch(() => {});
     router.push(`/resultado/${dni}`);
   };
 
