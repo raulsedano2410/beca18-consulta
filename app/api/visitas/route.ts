@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 // GET: devuelve SUM(valor) de la tabla visitas (solo lectura)
 export async function GET() {
   try {
