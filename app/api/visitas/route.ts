@@ -1,25 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 
-// GET: devuelve SUM(valor) de la tabla visitas
+// GET: devuelve SUM(valor) de la tabla visitas (solo lectura)
 export async function GET() {
   try {
     const supabase = getSupabase();
-    const { data, error } = await supabase.rpc("registrar_visita", {
-      p_tipo: "__noop__",
-    });
-    // Fallback: just sum
-    if (error) {
-      const { data: rows } = await supabase
-        .from("visitas")
-        .select("valor");
-      const total = (rows || []).reduce(
-        (sum: number, r: { valor: number }) => sum + r.valor,
-        0
-      );
-      return NextResponse.json({ count: total || 557 });
-    }
-    return NextResponse.json({ count: data || 557 });
+    const { data, error } = await supabase
+      .from("visitas")
+      .select("valor");
+    if (error) throw error;
+    const total = (data || []).reduce(
+      (sum: number, r: { valor: number }) => sum + r.valor,
+      0
+    );
+    return NextResponse.json({ count: total || 557 });
   } catch {
     return NextResponse.json({ count: 557 });
   }
@@ -38,7 +32,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-      // Fallback manual: insert + sum
+      // Fallback manual
       await supabase.from("visitas").insert({ valor: 1, tipo });
       const { data: rows } = await supabase
         .from("visitas")
