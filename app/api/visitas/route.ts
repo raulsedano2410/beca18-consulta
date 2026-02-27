@@ -9,7 +9,8 @@ export async function GET() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("visitas")
-      .select("valor");
+      .select("valor")
+      .limit(100000);
     if (error) throw error;
     const total = (data || []).reduce(
       (sum: number, r: { valor: number }) => sum + r.valor,
