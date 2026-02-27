@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   const { data: iesData } = await supabase
     .from('ies_elegibles')
     .select('*')
-    .eq('id', ies_id)
+    .eq('item', ies_id)
     .limit(1);
 
   if (!iesData || iesData.length === 0) {
