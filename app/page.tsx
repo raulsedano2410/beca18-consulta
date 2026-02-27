@@ -221,7 +221,7 @@ export default function HomePage() {
                 ¿Quien hizo esta pagina?
               </h3>
               <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-                Soy <strong>Raul Sedano</strong>, programador e ingeniero. Cree esta herramienta para ayudar a mi hija a entender su resultado
+                Soy <strong>Raul Sedano</strong>, programador. Cree esta herramienta para ayudar a mi hija a entender su resultado
                 de preseleccion y simular opciones que le den un mejor puntaje de seleccion para ganar su beca. La comparto con todas las
                 familias que estan en la misma situacion.
               </p>

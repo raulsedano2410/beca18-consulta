@@ -70,26 +70,31 @@ export async function POST(request: NextRequest) {
   // G = Gestion IES
   const g = ies.tipo_gestion === 'PUBLICA' ? 10 : 5;
 
-  // PR o ME
-  const quintilesRegion: Record<string, number> = {
-    'CAJAMARCA': 1, 'HUANCAVELICA': 1, 'AYACUCHO': 1, 'APURIMAC': 1, 'HUANUCO': 1,
-    'AMAZONAS': 1, 'LORETO': 1, 'PASCO': 1, 'PUNO': 2, 'SAN MARTIN': 2,
-    'CUSCO': 2, 'PIURA': 2, 'UCAYALI': 2, 'ANCASH': 2, 'JUNIN': 2,
-    'LA LIBERTAD': 3, 'LAMBAYEQUE': 3, 'TUMBES': 3, 'MADRE DE DIOS': 3,
-    'ICA': 3, 'TACNA': 3, 'MOQUEGUA': 4,
-    'AREQUIPA': 4, 'LIMA': 4, 'CALLAO': 4,
+  // ANEXO 2 — Permanencia Regional (PR): quintil de la region del estudiante
+  const quintilesPR: Record<string, number> = {
+    'AYACUCHO': 1, 'MOQUEGUA': 1, 'AMAZONAS': 1, 'LIMA PROVINCIAS': 1, 'HUANCAVELICA': 1,
+    'PASCO': 2, 'APURIMAC': 2, 'CAJAMARCA': 2, 'TUMBES': 2, 'LORETO': 2,
+    'UCAYALI': 3, 'PUNO': 3, 'SAN MARTIN': 3, 'MADRE DE DIOS': 3, 'ANCASH': 3,
+    'HUANUCO': 4, 'CUSCO': 4, 'TACNA': 4, 'JUNIN': 4, 'ICA': 4,
+    'LAMBAYEQUE': 5, 'LIMA': 5, 'CALLAO': 5, 'PIURA': 5, 'LA LIBERTAD': 5, 'AREQUIPA': 5,
   };
-  const puntajeQuintil: Record<number, number> = { 1: 10, 2: 8, 3: 6, 4: 4 };
+  // ANEXO 3 — Movilidad Estudiantil (ME): quintil de la region de la IES destino
+  const quintilesME: Record<string, number> = {
+    'LORETO': 1, 'PUNO': 1, 'ANCASH': 1, 'TUMBES': 1, 'CAJAMARCA': 1,
+    'PIURA': 2, 'LIMA PROVINCIAS': 2, 'APURIMAC': 2, 'CUSCO': 2, 'TACNA': 2,
+    'AYACUCHO': 3, 'HUANCAVELICA': 3, 'MADRE DE DIOS': 3, 'MOQUEGUA': 3, 'LA LIBERTAD': 3,
+    'SAN MARTIN': 4, 'PASCO': 4, 'ICA': 4, 'UCAYALI': 4, 'HUANUCO': 4,
+    'AMAZONAS': 5, 'JUNIN': 5, 'LIMA': 5, 'CALLAO': 5, 'LAMBAYEQUE': 5, 'AREQUIPA': 5,
+  };
+  const puntajeQuintil: Record<number, number> = { 1: 10, 2: 8, 3: 6, 4: 4, 5: 0 };
 
-  let prMe = 4;
-  let quintilUsado = 4;
+  let quintilUsado: number;
   if (misma_region) {
-    quintilUsado = quintilesRegion[persona.region] || 4;
-    prMe = puntajeQuintil[quintilUsado];
+    quintilUsado = quintilesPR[persona.region] ?? 5;
   } else {
-    quintilUsado = quintilesRegion[ies.departamento] || 4;
-    prMe = puntajeQuintil[quintilUsado];
+    quintilUsado = quintilesME[ies.departamento] ?? 5;
   }
+  const prMe = puntajeQuintil[quintilUsado];
 
   // EST
   const esIESTecnologica = ies.tipo_ies === 'INSTITUTO DE EDUCACION SUPERIOR TECNOLOGICA'

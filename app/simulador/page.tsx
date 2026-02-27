@@ -270,9 +270,13 @@ function SimuladorContent() {
           </span>
         )}
       </div>
-      <p className="text-gray-600 dark:text-gray-400 text-sm mb-8">
+      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
         Estima tu puntaje de seleccion eligiendo tu IES y carrera preferida.
       </p>
+
+      <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-3 mb-8 text-sm text-green-800 dark:text-green-300">
+        <strong>Correccion aplicada:</strong> Gracias a los postulantes que nos escribieron, corregimos los quintiles de PR y ME. Ahora usamos los datos oficiales de los Anexos 2 y 3 de las Bases, incluyendo el Quintil 5 (0 pts) que antes faltaba.
+      </div>
 
       {/* Paso 1: DNI */}
       <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 md:p-6 mb-4">
@@ -553,12 +557,17 @@ function SimuladorContent() {
                 <DesgloseItem
                   label={`${resultado.desglose.pr_me_tipo === 'PR' ? 'Estudias en tu region' : 'Te mudas a otra region'} — Quintil ${resultado.desglose.pr_me_quintil} (${resultado.desglose.pr_me_tipo})`}
                   ayuda={resultado.desglose.pr_me_tipo === 'PR'
-                    ? `Como vas a estudiar en tu misma region, te dan puntos por 'Permanencia Regional'. Tu region esta en el Quintil ${resultado.desglose.pr_me_quintil} de pobreza: Q1 = 10 pts, Q2 = 8 pts, Q3 = 6 pts, Q4 = 4 pts.`
-                    : `Como te mudas a otra region para estudiar, te dan puntos por 'Movilidad Estudiantil'. La region donde vas esta en el Quintil ${resultado.desglose.pr_me_quintil}: Q1 = 10 pts, Q2 = 8 pts, Q3 = 6 pts, Q4 = 4 pts.`
+                    ? `Como vas a estudiar en tu misma region, te dan puntos por 'Permanencia Regional'. Tu region esta en el Quintil ${resultado.desglose.pr_me_quintil}: Q1 = 10 pts, Q2 = 8 pts, Q3 = 6 pts, Q4 = 4 pts, Q5 = 0 pts (Anexo 2 de las Bases).`
+                    : `Como te mudas a otra region para estudiar, te dan puntos por 'Movilidad Estudiantil'. La region donde vas esta en el Quintil ${resultado.desglose.pr_me_quintil}: Q1 = 10 pts, Q2 = 8 pts, Q3 = 6 pts, Q4 = 4 pts, Q5 = 0 pts (Anexo 3 de las Bases).`
                   }
                   value={resultado.desglose.pr_me}
                   max={10}
                 />
+                {(resultado.persona.region === 'LIMA' || resultado.persona.region === 'CALLAO') && (
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 -mt-2 ml-1">
+                    &quot;{resultado.persona.region}&quot; corresponde a Lima Metropolitana y Callao (Q5). Lima Provincias se mapea por separado (PR: Q1, ME: Q2).
+                  </p>
+                )}
                 <DesgloseItem
                   label={`Carrera de alta demanda EDO (EST)${resultado.desglose.est > 0 ? ' — ' + resultado.desglose.est_campo_edo : ''}`}
                   ayuda={resultado.desglose.est_razon}
@@ -689,22 +698,26 @@ function SimuladorContent() {
                     <p className="font-medium text-sm">¿Donde vas a estudiar? (PR o ME)</p>
                     <span className="font-bold text-sm shrink-0 ml-3">/ 10</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-5 gap-1">
                     <div className="bg-green-50 dark:bg-green-950/30 rounded-lg px-1 py-1.5 text-center">
                       <p className="font-bold text-green-700 dark:text-green-400 text-sm">10</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Quintil 1<br/>Muy pobre</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Q1</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg px-1 py-1.5 text-center">
                       <p className="font-bold text-blue-700 dark:text-blue-400 text-sm">8</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Quintil 2<br/>Pobre</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Q2</p>
                     </div>
                     <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-lg px-1 py-1.5 text-center">
                       <p className="font-bold text-yellow-700 dark:text-yellow-400 text-sm">6</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Quintil 3<br/>Intermedia</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Q3</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg px-1 py-1.5 text-center">
-                      <p className="font-bold text-gray-600 dark:text-gray-300 text-sm">4</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Quintil 4<br/>Lima, etc.</p>
+                    <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg px-1 py-1.5 text-center">
+                      <p className="font-bold text-orange-700 dark:text-orange-400 text-sm">4</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Q4</p>
+                    </div>
+                    <div className="bg-red-50 dark:bg-red-950/30 rounded-lg px-1 py-1.5 text-center">
+                      <p className="font-bold text-red-700 dark:text-red-400 text-sm">0</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Q5</p>
                     </div>
                   </div>
                 </div>
@@ -789,13 +802,26 @@ function SimuladorContent() {
               </details>
               <details className="group">
                 <summary className="text-xs font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  + ¿Que regiones estan en cada quintil?
+                  + Quintiles para Permanencia Regional (PR) — Anexo 2
                 </summary>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-3 space-y-0.5">
-                  <p><strong>Quintil 1</strong> (mas pobres): Cajamarca, Huancavelica, Ayacucho, Apurimac, Huanuco, Amazonas, Loreto, Pasco.</p>
-                  <p><strong>Quintil 2:</strong> Puno, San Martin, Cusco, Piura, Ucayali, Ancash, Junin.</p>
-                  <p><strong>Quintil 3:</strong> La Libertad, Lambayeque, Tumbes, Madre de Dios, Ica, Tacna.</p>
-                  <p><strong>Quintil 4:</strong> Moquegua, Arequipa, Lima, Callao.</p>
+                  <p><strong>Q1 (10 pts):</strong> Ayacucho, Moquegua, Amazonas, Lima Provincias, Huancavelica.</p>
+                  <p><strong>Q2 (8 pts):</strong> Pasco, Apurimac, Cajamarca, Tumbes, Loreto.</p>
+                  <p><strong>Q3 (6 pts):</strong> Ucayali, Puno, San Martin, Madre de Dios, Ancash.</p>
+                  <p><strong>Q4 (4 pts):</strong> Huanuco, Cusco, Tacna, Junin, Ica.</p>
+                  <p><strong>Q5 (0 pts):</strong> Lambayeque, Lima Metropolitana, Callao, Piura, La Libertad, Arequipa.</p>
+                </div>
+              </details>
+              <details className="group">
+                <summary className="text-xs font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  + Quintiles para Movilidad Estudiantil (ME) — Anexo 3
+                </summary>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-3 space-y-0.5">
+                  <p><strong>Q1 (10 pts):</strong> Loreto, Puno, Ancash, Tumbes, Cajamarca.</p>
+                  <p><strong>Q2 (8 pts):</strong> Piura, Lima Provincias, Apurimac, Cusco, Tacna.</p>
+                  <p><strong>Q3 (6 pts):</strong> Ayacucho, Huancavelica, Madre de Dios, Moquegua, La Libertad.</p>
+                  <p><strong>Q4 (4 pts):</strong> San Martin, Pasco, Ica, Ucayali, Huanuco.</p>
+                  <p><strong>Q5 (0 pts):</strong> Amazonas, Junin, Lima Metropolitana, Callao, Lambayeque, Arequipa.</p>
                 </div>
               </details>
               <details className="group">
@@ -803,8 +829,9 @@ function SimuladorContent() {
                   + ¿Que es PR y ME?
                 </summary>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-3 space-y-0.5">
-                  <p><strong>Permanencia Regional (PR):</strong> Si estudias en la misma region donde terminaste el colegio. El puntaje depende del quintil de pobreza de tu region.</p>
-                  <p><strong>Movilidad Estudiantil (ME):</strong> Si te mudas a otra region para estudiar. El puntaje depende del quintil de la region donde vas. No puedes sumar PR y ME a la vez.</p>
+                  <p><strong>Permanencia Regional (PR):</strong> Si estudias en la misma region donde terminaste el colegio. El puntaje depende del quintil de tu region segun el Anexo 2. Quintil 1 = 10 pts, Quintil 5 = 0 pts.</p>
+                  <p><strong>Movilidad Estudiantil (ME):</strong> Si te mudas a otra region para estudiar. El puntaje depende del quintil de la region destino segun el Anexo 3 (diferente al de PR). No puedes sumar PR y ME a la vez.</p>
+                  <p><strong>Nota:</strong> Los Anexos separan &quot;Lima Metropolitana y Callao&quot; de &quot;Lima Provincias&quot;. Callao no aparece como entrada separada en los Anexos, se agrupa con Lima Metropolitana (Q5).</p>
                 </div>
               </details>
             </div>
