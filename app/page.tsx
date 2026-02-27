@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { estadisticasData } from "@/lib/data/estadisticas";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 
@@ -51,6 +52,28 @@ export default function HomePage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [visitCount, setVisitCount] = useState(0);
   const animatedVisits = useCountUp(visitCount, 1500);
+  const cafeRef = useRef<HTMLDivElement>(null);
+  const [yapeOpen, setYapeOpen] = useState(false);
+  const [showSticky, setShowSticky] = useState(false);
+  const [stickyDismissed, setStickyDismissed] = useState(false);
+
+  // IntersectionObserver para sticky cafe bar
+  useEffect(() => {
+    if (sessionStorage.getItem("cafe-dismissed")) {
+      setStickyDismissed(true);
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowSticky(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    if (cafeRef.current) observer.observe(cafeRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const dismissSticky = () => {
+    setStickyDismissed(true);
+    sessionStorage.setItem("cafe-dismissed", "1");
+  };
 
   // Leer contador al cargar (solo lectura)
   useEffect(() => {
@@ -204,8 +227,122 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {/* Banner de actualizacion */}
+          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-xs text-blue-100">
+            <svg className="w-3.5 h-3.5 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            Quintiles PR y ME corregidos segun Anexos oficiales — 27 feb 2026, 8:00 p.m.
+          </div>
         </div>
       </section>
+
+      {/* Invitame un cafe */}
+      <div ref={cafeRef} className="max-w-4xl mx-auto px-4 mt-6 mb-2">
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 md:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
+              Esta pagina es gratis y sin anuncios. Si te fue util, puedes apoyar con un cafe.
+            </p>
+            <button
+              onClick={() => setYapeOpen(true)}
+              className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors shrink-0 cursor-pointer"
+            >
+              <span>&#9749;</span> Invitame un cafe
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky cafe — desktop: barra top, mobile: boton flotante */}
+      {showSticky && !stickyDismissed && (
+        <>
+          {/* Desktop */}
+          <div className="hidden md:block fixed top-16 left-0 right-0 z-40 bg-amber-50/90 dark:bg-amber-950/80 backdrop-blur-sm border-b border-amber-200 dark:border-amber-800 animate-slide-down">
+            <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+              <p className="text-xs text-amber-900 dark:text-amber-200 truncate">
+                ¿Te fue util? Apoyame con un cafe
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setYapeOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full transition-colors cursor-pointer"
+                >
+                  <span>&#9749;</span> Invitame un cafe
+                </button>
+                <button
+                  onClick={dismissSticky}
+                  className="text-amber-400 hover:text-amber-600 dark:text-amber-500 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                  aria-label="Cerrar"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Mobile: boton flotante */}
+          <div className="md:hidden fixed bottom-5 right-4 z-40 animate-slide-down">
+            <button
+              onClick={() => setYapeOpen(true)}
+              className="relative w-11 h-11 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Invitame un cafe"
+            >
+              <span className="text-lg">&#9749;</span>
+            </button>
+            <button
+              onClick={dismissSticky}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-800/70 text-white rounded-full flex items-center justify-center text-[10px] cursor-pointer"
+              aria-label="Cerrar"
+            >
+              &#10005;
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Modal Yape QR */}
+      {yapeOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={() => setYapeOpen(false)}
+        >
+          <div
+            className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setYapeOpen(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer"
+              aria-label="Cerrar"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">
+              &#9749; Invitame un cafe
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Escanea el codigo QR con Yape
+            </p>
+            <div className="flex justify-center mb-3">
+              <Image
+                src="/yape-qr.jpg"
+                alt="Codigo QR de Yape"
+                width={250}
+                height={250}
+                className="rounded-xl"
+              />
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Gracias por tu apoyo &#10084;&#65039;
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Sobre este sitio */}
       <section className="max-w-4xl mx-auto px-4 mt-8 mb-2">

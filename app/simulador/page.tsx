@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 import iesRaw from "@/lib/data/ies-simulador.json";
+import CafeSticky from "@/app/components/CafeSticky";
 
 const iesData = iesRaw as Record<string, { ti: string; tg: string; progs: { id: number; p: string; d: string; s: string; gr: number }[] }>;
 
@@ -274,10 +275,6 @@ function SimuladorContent() {
         Estima tu puntaje de seleccion eligiendo tu IES y carrera preferida.
       </p>
 
-      <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-3 mb-8 text-sm text-green-800 dark:text-green-300">
-        <strong>Correccion aplicada:</strong> Gracias a los postulantes que nos escribieron, corregimos los quintiles de PR y ME. Ahora usamos los datos oficiales de los Anexos 2 y 3 de las Bases, incluyendo el Quintil 5 (0 pts) que antes faltaba.
-      </div>
-
       {/* Paso 1: DNI */}
       <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 md:p-6 mb-4">
         <h2 className="font-semibold mb-3">1. Ingresa tu DNI</h2>
@@ -510,6 +507,7 @@ function SimuladorContent() {
       {/* Resultado */}
       {resultado && (
         <div className="space-y-4">
+          <CafeSticky />
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl border border-blue-200 dark:border-blue-800 p-4 md:p-6">
             <h2 className="font-bold text-xl mb-4 text-center">
               Tu Puntaje Estimado de Seleccion

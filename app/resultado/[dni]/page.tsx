@@ -7,6 +7,7 @@ import type { ChartData, ChartOptions } from "chart.js";
 import { useTheme } from "@/app/components/ThemeProvider";
 import "@/lib/chart-config";
 import { getChartColors } from "@/lib/chart-config";
+import CafeSticky from "@/app/components/CafeSticky";
 
 interface ResultadoData {
   tipo: string;
@@ -83,9 +84,9 @@ export default function ResultadoPage({
     );
   }
 
-  if (data.tipo === "preseleccionado") return <Preseleccionado data={data} />;
-  if (data.tipo === "no_preseleccionado") return <NoPreseleccionado data={data} />;
-  if (data.tipo === "descalificado") return <Descalificado data={data} />;
+  if (data.tipo === "preseleccionado") return <><CafeSticky /><Preseleccionado data={data} /></>;
+  if (data.tipo === "no_preseleccionado") return <><CafeSticky /><NoPreseleccionado data={data} /></>;
+  if (data.tipo === "descalificado") return <><CafeSticky /><Descalificado data={data} /></>;
 
   return null;
 }
