@@ -4,18 +4,16 @@ import { getSupabase } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 // GET: devuelve SUM(valor) de la tabla visitas (solo lectura)
+// Usa COUNT(*) en vez de SELECT+SUM porque PostgREST limita a 1000 filas.
+// La fila base tiene valor=557, el resto valor=1, entonces: total = count + 556.
 export async function GET() {
   try {
     const supabase = getSupabase();
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from("visitas")
-      .select("valor")
-      .limit(100000);
+      .select("*", { count: "exact", head: true });
     if (error) throw error;
-    const total = (data || []).reduce(
-      (sum: number, r: { valor: number }) => sum + r.valor,
-      0
-    );
+    const total = (count || 0) + 556;
     return NextResponse.json({ count: total || 557 });
   } catch {
     return NextResponse.json({ count: 557 });
