@@ -7,7 +7,7 @@ import type { ChartData, ChartOptions } from "chart.js";
 import { useTheme } from "@/app/components/ThemeProvider";
 import "@/lib/chart-config";
 import { getChartColors } from "@/lib/chart-config";
-import CafeSticky from "@/app/components/CafeSticky";
+
 
 interface ResultadoData {
   tipo: string;
@@ -84,9 +84,9 @@ export default function ResultadoPage({
     );
   }
 
-  if (data.tipo === "preseleccionado") return <><CafeSticky /><Preseleccionado data={data} /></>;
-  if (data.tipo === "no_preseleccionado") return <><CafeSticky /><NoPreseleccionado data={data} /></>;
-  if (data.tipo === "descalificado") return <><CafeSticky /><Descalificado data={data} /></>;
+  if (data.tipo === "preseleccionado") return <Preseleccionado data={data} />;
+  if (data.tipo === "no_preseleccionado") return <NoPreseleccionado data={data} />;
+  if (data.tipo === "descalificado") return <Descalificado data={data} />;
 
   return null;
 }
@@ -134,7 +134,7 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
       </div>
 
       {/* Rankings */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <RankingCard
           label="Ranking General"
           value={`#${data.ranking_general?.toLocaleString()}`}
@@ -148,17 +148,46 @@ function Preseleccionado({ data }: { data: ResultadoData }) {
           icon="modalidad"
         />
         <RankingCard
-          label={`En ${d.region as string}`}
-          value={`#${data.ranking_regional?.toLocaleString()}`}
-          sub={`de ${data.total_region?.toLocaleString()}`}
-          icon="region"
-        />
-        <RankingCard
           label="Percentil"
           value={`Top ${data.percentil}%`}
           sub={`${data.mismo_puntaje_global} con igual puntaje`}
           icon="percentil"
         />
+      </div>
+
+      {/* Ranking Competencia Directa */}
+      <div className="relative mb-6">
+        <div className="absolute -top-2 -right-2 text-2xl z-10">&#128293;</div>
+        <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border border-orange-300 dark:border-orange-700 rounded-xl p-4 md:p-5 ring-2 ring-orange-400/50 shadow-lg shadow-orange-500/20">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="shrink-0 w-10 h-10 md:w-12 md:h-12 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">&#128293; Tu competencia directa</p>
+                <p className="text-3xl md:text-4xl font-bold text-orange-700 dark:text-orange-300">
+                  #{data.ranking_regional?.toLocaleString()}
+                  <span className="text-base font-normal text-orange-500 dark:text-orange-400 ml-1.5">de {data.total_region?.toLocaleString()}</span>
+                </p>
+                <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+                  {(d.modalidad as string).replace('BECA 18 ', '').replace('BECA ', '')} &#183; {d.region as string}
+                </p>
+              </div>
+            </div>
+            <div className="sm:ml-auto sm:max-w-xs">
+              <p className="text-xs text-orange-700 dark:text-orange-300 leading-relaxed">
+                Este es tu puesto entre los preseleccionados de tu misma modalidad y region. Te da una vision muy cercana a tu competencia real si decides quedarte a estudiar en tu departamento.
+              </p>
+              <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1 leading-relaxed">
+                &#9432; Es una referencia, no definitiva: postulantes de otras regiones podrian elegir estudiar aqui y sumarse a la competencia (ganando puntos por movilidad estudiantil), asi como tu podrias ir a otra region.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Dato clave */}

@@ -54,19 +54,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Slide down animation for sticky bar */
-@keyframes slide-down {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
 
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
-}
 
 /* Smooth theme transitions */
 html.theme-transition,

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 import iesRaw from "@/lib/data/ies-simulador.json";
-import CafeSticky from "@/app/components/CafeSticky";
+
 
 const iesData = iesRaw as Record<string, { ti: string; tg: string; progs: { id: number; p: string; d: string; s: string; gr: number }[] }>;
 
@@ -507,7 +507,6 @@ function SimuladorContent() {
       {/* Resultado */}
       {resultado && (
         <div className="space-y-4">
-          <CafeSticky />
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl border border-blue-200 dark:border-blue-800 p-4 md:p-6">
             <h2 className="font-bold text-xl mb-4 text-center">
               Tu Puntaje Estimado de Seleccion
