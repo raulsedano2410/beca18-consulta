@@ -19,8 +19,7 @@ export async function GET(request: NextRequest) {
   for (const { table, tipo } of tables) {
     let query = supabase
       .from(table)
-      .select('dni, apellidos_nombres, modalidad')
-      .limit(10);
+      .select('dni, apellidos_nombres, modalidad');
 
     if (isDNI) {
       if (q.length >= 7) {
@@ -28,8 +27,11 @@ export async function GET(request: NextRequest) {
       } else {
         query = query.like('dni', `${q}%`);
       }
+      query = query.limit(10);
     } else {
-      query = query.ilike('apellidos_nombres', `%${q}%`);
+      query = query.ilike('apellidos_nombres', `%${q}%`)
+        .order('apellidos_nombres')
+        .limit(20);
     }
 
     const { data } = await query;
@@ -45,5 +47,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ resultados: resultados.slice(0, 20) });
+  resultados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  return NextResponse.json({ resultados: resultados.slice(0, 30) });
 }

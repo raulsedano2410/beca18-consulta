@@ -161,7 +161,7 @@ export default function HomePage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ingresa tu DNI o nombre completo..."
+                placeholder="Ingresa tu DNI o tus apellidos y nombre..."
                 className="w-full px-4 py-4 text-gray-800 dark:text-gray-100 dark:bg-gray-800 text-base md:text-lg focus:outline-none"
               />
               {loading && (
